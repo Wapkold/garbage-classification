@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Артефакты обучения
+checkpoints/
+runs/
+logs/
+outputs/
+
+# Генерируется скриптами сборки (исходники — static/index.html и app/app.py)
+onnx/
+deploy/
+deploy_static/
+*.onnx
+
+# Служебное от gradio (сертификат share-туннеля, кеш)
+.gradio/
+*.pt
+*.pth
+*.ckpt
+
+# IDE и ОС
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

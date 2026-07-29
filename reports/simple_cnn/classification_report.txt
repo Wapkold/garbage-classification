@@ -1,0 +1,22 @@
+чекпоинт: D:\Visual Studio\prod\image-classification\checkpoints\simple_cnn\best.pt
+выборка: test
+
+              precision    recall  f1-score   support
+
+     battery      0.758     0.664     0.708       113
+  biological      0.848     0.800     0.824       105
+   cardboard      0.698     0.768     0.731       211
+     clothes      0.732     0.810     0.769       284
+       glass      0.712     0.766     0.738       261
+       metal      0.545     0.643     0.590       140
+       paper      0.692     0.640     0.665       200
+     plastic      0.683     0.521     0.591       240
+       shoes      0.667     0.645     0.656       217
+       trash      0.606     0.632     0.619        68
+
+    accuracy                          0.694      1839
+   macro avg      0.694     0.689     0.689      1839
+weighted avg      0.696     0.694     0.693      1839
+
+accuracy:          0.6944
+balanced accuracy: 0.6889

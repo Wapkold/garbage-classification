@@ -1,0 +1,22 @@
+чекпоинт: D:\Visual Studio\prod\image-classification\checkpoints\resnet18_finetune\best.pt
+выборка: test
+
+              precision    recall  f1-score   support
+
+     battery      0.955     0.947     0.951       113
+  biological      0.937     0.990     0.963       105
+   cardboard      0.938     0.938     0.938       211
+     clothes      0.969     0.982     0.976       284
+       glass      0.934     0.916     0.925       261
+       metal      0.913     0.821     0.865       140
+       paper      0.983     0.890     0.934       200
+     plastic      0.861     0.929     0.894       240
+       shoes      0.955     0.982     0.968       217
+       trash      0.806     0.853     0.829        68
+
+    accuracy                          0.932      1839
+   macro avg      0.925     0.925     0.924      1839
+weighted avg      0.933     0.932     0.932      1839
+
+accuracy:          0.9320
+balanced accuracy: 0.9249

@@ -1,0 +1,22 @@
+чекпоинт: D:\Visual Studio\prod\image-classification\checkpoints\resnet18_transfer\best.pt
+выборка: test
+
+              precision    recall  f1-score   support
+
+     battery      0.877     0.947     0.911       113
+  biological      0.953     0.962     0.957       105
+   cardboard      0.937     0.848     0.891       211
+     clothes      0.975     0.975     0.975       284
+       glass      0.833     0.862     0.847       261
+       metal      0.730     0.850     0.785       140
+       paper      0.876     0.780     0.825       200
+     plastic      0.828     0.721     0.771       240
+       shoes      0.935     0.995     0.964       217
+       trash      0.624     0.779     0.693        68
+
+    accuracy                          0.873      1839
+   macro avg      0.857     0.872     0.862      1839
+weighted avg      0.877     0.873     0.873      1839
+
+accuracy:          0.8733
+balanced accuracy: 0.8720

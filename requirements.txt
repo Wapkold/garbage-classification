@@ -1,0 +1,33 @@
+# Обучение
+#
+# Внимание: на Windows `pip install torch` берёт с PyPI сборку БЕЗ CUDA, и
+# torch.cuda.is_available() молча вернёт False. Для видеокарты NVIDIA ставьте
+# с индекса PyTorch (cu126 подходит для Ampere и новее):
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+# Для машины без GPU замените cu126 на cpu.
+#
+# Вторая ловушка: если CPU-сборка уже стоит, этой команды НЕ ХВАТИТ. Версия у
+# сборок одна и та же (2.13.0), различается только локальный суффикс — +cpu
+# против +cu126, — а его pip при проверке не учитывает и отвечает
+# "Requirement already satisfied", ничего не скачав. Указывайте суффикс явно:
+#   pip install torch==2.13.0+cu126 torchvision==0.28.0+cu126 \
+#       --index-url https://download.pytorch.org/whl/cu126
+torch
+torchvision
+
+# Данные и метрики
+numpy
+pandas
+pillow
+scikit-learn
+
+# Визуализация и EDA
+matplotlib
+seaborn
+jupyter
+
+# Демо
+gradio
+
+# Утилиты
+tqdm

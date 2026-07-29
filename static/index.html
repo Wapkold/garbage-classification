@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Куда выбросить? · классификация отходов</title>
+<meta name="description" content="Нейросеть определяет тип отхода по фотографии. Работает целиком в браузере, без сервера.">
+<style>
+:root {
+  color-scheme: light dark;
+  --surface: #fcfcfb;
+  --surface-2: #f4f4f1;
+  --card: #ffffff;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --ink-3: #898781;
+  --line: #e1e0d9;
+  --acc: #2a78d6;
+  --acc-2: #1baf7a;
+  --acc-soft: rgba(42, 120, 214, 0.10);
+  --shadow: 0 1px 2px rgba(11,11,11,.04), 0 8px 24px rgba(11,11,11,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #121211;
+    --surface-2: #1a1a19;
+    --card: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --ink-3: #898781;
+    --line: #2c2c2a;
+    --acc: #3987e5;
+    --acc-2: #199e70;
+    --acc-soft: rgba(57, 135, 229, 0.16);
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--surface);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1060px; margin: 0 auto; padding: 0 1.25rem 3rem; }
+
+/* ---------- шапка ---------- */
+header { text-align: center; padding: 2.75rem 0 1.75rem; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: .45rem;
+  font-size: .74rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--acc); background: var(--acc-soft);
+  padding: .34rem .75rem; border-radius: 100px; margin-bottom: .9rem;
+}
+h1 {
+  font-size: clamp(1.9rem, 5vw, 2.7rem); font-weight: 700;
+  letter-spacing: -.03em; line-height: 1.08; margin: 0 0 .65rem;
+}
+header p { margin: 0 auto; max-width: 33rem; color: var(--ink-2); font-size: 1.02rem; }
+
+/* ---------- статус загрузки модели ---------- */
+#boot {
+  display: flex; align-items: center; justify-content: center; gap: .6rem;
+  margin: 0 auto 1.75rem; max-width: 30rem;
+  padding: .7rem 1rem; border-radius: 12px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  font-size: .87rem; color: var(--ink-2);
+}
+#boot.ready { display: none; }
+#boot.failed { border-color: #d03b3b; color: #d03b3b; }
+.spin {
+  width: 15px; height: 15px; flex: none; border-radius: 50%;
+  border: 2px solid var(--line); border-top-color: var(--acc);
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#boot.failed .spin { display: none; }
+
+/* ---------- сетка ---------- */
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+/* ---------- загрузка изображения ---------- */
+#drop {
+  position: relative; border: 1.5px dashed var(--line); border-radius: 18px;
+  background: var(--card); min-height: 340px;
+  display: grid; place-items: center; text-align: center; padding: 1.5rem;
+  cursor: pointer; transition: border-color .18s, background .18s;
+  overflow: hidden;
+}
+#drop:hover, #drop.over { border-color: var(--acc); background: var(--acc-soft); }
+#drop .ph .ico { font-size: 2.1rem; opacity: .45; margin-bottom: .55rem; }
+#drop .ph .t { font-size: .95rem; color: var(--ink-2); }
+#drop .ph .s { font-size: .8rem; color: var(--ink-3); margin-top: .3rem; }
+#preview { display: none; width: 100%; height: 340px; object-fit: contain; border-radius: 16px; }
+#drop.has-image { border-style: solid; padding: .5rem; }
+#drop.has-image .ph { display: none; }
+#drop.has-image #preview { display: block; }
+#file { display: none; }
+.actions { display: flex; gap: .6rem; margin-top: .75rem; }
+button {
+  font: inherit; font-size: .9rem; padding: .55rem 1.1rem; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  cursor: pointer; transition: background .15s, border-color .15s;
+}
+button:hover { border-color: var(--ink-3); }
+button.primary { background: var(--acc); border-color: var(--acc); color: #fff; }
+button.primary:hover { filter: brightness(1.06); }
+button:disabled { opacity: .5; cursor: default; }
+
+/* ---------- карточка результата ---------- */
+.card {
+  border: 1px solid var(--line); border-radius: 18px;
+  background: var(--card); overflow: hidden; box-shadow: var(--shadow);
+}
+.verdict {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1.35rem 1.5rem; border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--acc-soft), transparent);
+}
+.verdict .emoji { font-size: 2.4rem; line-height: 1; flex: none; }
+.verdict .who { flex: 1 1 auto; min-width: 0; }
+.verdict .cat {
+  font-size: .71rem; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--acc); margin-bottom: .2rem;
+}
+.verdict .name { font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+.verdict .score { flex: none; text-align: right; }
+.verdict .num { font-size: 2rem; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+.verdict .num span { font-size: 1.1rem; font-weight: 600; opacity: .55; }
+.verdict .cap { font-size: .71rem; color: var(--ink-2); margin-top: .2rem; }
+
+.bars { padding: 1.1rem 1.5rem 1.25rem; display: grid; gap: .6rem; }
+.row { display: grid; grid-template-columns: 8.5rem 1fr 3.2rem; align-items: center; gap: .75rem; }
+.row .nm { font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .nm .en { display: block; font-size: .7rem; color: var(--ink-3); }
+.row .track { height: 8px; border-radius: 100px; background: var(--surface-2); overflow: hidden; }
+.row .fill {
+  height: 100%; border-radius: 100px; background: var(--acc); opacity: .32;
+  transition: width .45s cubic-bezier(.22,1,.36,1);
+}
+.row.top .fill { opacity: 1; }
+.row.top .nm { font-weight: 600; }
+.row .pct {
+  font-size: .82rem; text-align: right; color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.row.top .pct { color: var(--ink); font-weight: 600; }
+
+.hint {
+  display: flex; gap: .75rem; align-items: flex-start;
+  padding: 1rem 1.5rem 1.25rem; border-top: 1px solid var(--line); background: var(--surface-2);
+}
+.hint .mark {
+  flex: none; width: 22px; height: 22px; border-radius: 100px;
+  background: var(--acc-2); color: #fff; font-size: .8rem; font-weight: 700;
+  display: grid; place-items: center; margin-top: .1rem;
+}
+.hint .txt { font-size: .9rem; color: var(--ink-2); }
+.warn {
+  margin: 0 1.5rem 1.25rem; padding: .7rem .9rem;
+  border: 1px dashed var(--line); border-radius: 12px;
+  font-size: .84rem; color: var(--ink-2);
+}
+.empty {
+  border: 1px dashed var(--line); border-radius: 18px;
+  padding: 3.5rem 1.5rem; text-align: center; color: var(--ink-2);
+}
+.empty .ico { font-size: 2rem; opacity: .5; margin-bottom: .6rem; }
+
+/* ---------- примеры ---------- */
+.examples { margin-top: 1.75rem; }
+.examples .lbl { font-size: .85rem; color: var(--ink-2); margin-bottom: .7rem; }
+.thumbs { display: grid; grid-template-columns: repeat(10, 1fr); gap: .5rem; }
+@media (max-width: 860px) { .thumbs { grid-template-columns: repeat(5, 1fr); } }
+.thumbs button {
+  padding: 0; border-radius: 12px; overflow: hidden; aspect-ratio: 1;
+  border: 1px solid var(--line); background: var(--surface-2);
+}
+.thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumbs button:hover { border-color: var(--acc); }
+
+/* ---------- подвал ---------- */
+footer {
+  text-align: center; margin-top: 2.5rem; padding-top: 1.5rem;
+  border-top: 1px solid var(--line); font-size: .8rem; color: var(--ink-3);
+}
+footer code { background: var(--surface-2); padding: .1rem .35rem; border-radius: 5px; }
+footer .dot { opacity: .45; margin: 0 .4rem; }
+footer a { color: var(--acc); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">♻️ Классификация отходов</div>
+  <h1>Куда это выбросить?</h1>
+  <p>Сфотографируйте предмет — нейросеть определит тип отхода из 10 категорий и подскажет, куда его сдать.</p>
+</header>
+
+<div id="boot"><span class="spin"></span><span id="boot-text">Загружаю модель…</span></div>
+
+<div class="grid">
+  <div>
+    <div id="drop">
+      <div class="ph">
+        <div class="ico">📷</div>
+        <div class="t">Перетащите фотографию сюда</div>
+        <div class="s">или нажмите, чтобы выбрать файл</div>
+      </div>
+      <img id="preview" alt="Загруженное изображение">
+    </div>
+    <input type="file" id="file" accept="image/*">
+    <div class="actions">
+      <button id="clear">Очистить</button>
+      <button id="run" class="primary" disabled>Определить</button>
+    </div>
+  </div>
+
+  <div id="result">
+    <div class="empty">
+      <div class="ico">♻️</div>
+      <div>Загрузите фотографию или выберите пример ниже</div>
+    </div>
+  </div>
+</div>
+
+<div class="examples">
+  <div class="lbl">Попробуйте на примерах</div>
+  <div class="thumbs" id="thumbs"></div>
+</div>
+
+<footer>
+  Модель <code>ResNet18</code><span class="dot">·</span>дообучена на
+  <a href="https://www.kaggle.com/datasets/mostafaabla/garbage-classification" target="_blank" rel="noopener">Garbage Classification</a>
+  <span class="dot">·</span>точность <span id="acc">92.0%</span> на тесте
+  <span class="dot">·</span>инференс целиком в вашем браузере
+</footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/ort.min.js"></script>
+<script>
+// ---------------------------------------------------------------------------
+// Предобработка ОБЯЗАНА совпадать с src/dataset.py::get_eval_transforms():
+//   Resize(256) по короткой стороне -> CenterCrop(224) -> /255 -> нормализация
+//   под ImageNet-статистику. Любое расхождение даёт молчаливую деградацию:
+//   модель работает, но хуже, и по интерфейсу это не диагностируется.
+// ---------------------------------------------------------------------------
+const RESIZE = 256, CROP = 224;
+const MEAN = [0.485, 0.456, 0.406];
+const STD  = [0.229, 0.224, 0.225];
+
+const CLASS_INFO = {
+  battery:    ["🔋", "Батарейки", "Опасные отходы", "Не в общий бак. Пункт приёма — часто в супермаркетах и магазинах электроники."],
+  biological: ["🍂", "Органика", "Пищевые отходы", "Компост или отдельный бак для органики."],
+  cardboard:  ["📦", "Картон", "Вторсырьё", "Расправить и сложить, снять скотч. Мокрый и жирный — в общий бак."],
+  clothes:    ["👕", "Одежда", "Текстиль", "Пункт приёма вещей или контейнер для одежды. Пригодное — на благотворительность."],
+  glass:      ["🍷", "Стекло", "Вторсырьё", "Бак для стекла, без крышек. Керамика, зеркала и лампы туда не идут."],
+  metal:      ["🥫", "Металл", "Вторсырьё", "Бак для металла. Банки лучше сполоснуть и смять."],
+  paper:      ["📄", "Бумага", "Вторсырьё", "Сухая и чистая — в бумагу. Чеки, салфетки и жирная бумага — в общий бак."],
+  plastic:    ["🧴", "Пластик", "Вторсырьё", "Смотрите маркировку 1–7: принимают не все. Сполоснуть, крышку сдать отдельно."],
+  shoes:      ["👟", "Обувь", "Текстиль", "Пункт приёма или спецконтейнер. В бумагу и пластик нельзя."],
+  trash:      ["🗑️", "Прочее", "Не перерабатывается", "Общий бак для смешанных отходов."],
+};
+const CLASSES = Object.keys(CLASS_INFO);
+
+let session = null, currentImage = null;
+
+const $ = (id) => document.getElementById(id);
+const boot = $("boot"), bootText = $("boot-text");
+const drop = $("drop"), fileInput = $("file"), preview = $("preview");
+const runBtn = $("run"), clearBtn = $("clear"), result = $("result");
+
+// --- загрузка модели -------------------------------------------------------
+async function init() {
+  try {
+    ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/";
+    session = await ort.InferenceSession.create("model.int8.onnx", {
+      executionProviders: ["wasm"],
+      graphOptimizationLevel: "all",
+    });
+    boot.classList.add("ready");
+    runBtn.disabled = !currentImage;
+    buildExamples();
+  } catch (e) {
+    boot.classList.add("failed");
+    bootText.textContent = "Не удалось загрузить модель: " + e.message;
+    console.error(e);
+  }
+}
+
+// --- предобработка ---------------------------------------------------------
+function preprocess(img) {
+  const w0 = img.naturalWidth || img.width, h0 = img.naturalHeight || img.height;
+  // torchvision Resize(int) масштабирует короткую сторону, длинную считает
+  // через int() — то есть отбрасывает дробную часть, а не округляет.
+  const scale = RESIZE / Math.min(w0, h0);
+  const w = Math.max(RESIZE, Math.trunc(w0 * scale));
+  const h = Math.max(RESIZE, Math.trunc(h0 * scale));
+
+  const c1 = document.createElement("canvas");
+  c1.width = w; c1.height = h;
+  const g1 = c1.getContext("2d", { willReadFrequently: true });
+  g1.imageSmoothingEnabled = true;
+  g1.imageSmoothingQuality = "high";
+  g1.drawImage(img, 0, 0, w, h);
+
+  const sx = Math.floor((w - CROP) / 2), sy = Math.floor((h - CROP) / 2);
+  const c2 = document.createElement("canvas");
+  c2.width = CROP; c2.height = CROP;
+  const g2 = c2.getContext("2d", { willReadFrequently: true });
+  g2.drawImage(c1, sx, sy, CROP, CROP, 0, 0, CROP, CROP);
+
+  const px = g2.getImageData(0, 0, CROP, CROP).data;
+  const out = new Float32Array(3 * CROP * CROP);
+  const plane = CROP * CROP;
+  for (let i = 0; i < plane; i++) {
+    for (let c = 0; c < 3; c++) {
+      out[c * plane + i] = (px[i * 4 + c] / 255 - MEAN[c]) / STD[c];
+    }
+  }
+  return new ort.Tensor("float32", out, [1, 3, CROP, CROP]);
+}
+
+function softmax(logits) {
+  const m = Math.max(...logits);
+  const e = logits.map((v) => Math.exp(v - m));
+  const s = e.reduce((a, b) => a + b, 0);
+  return e.map((v) => v / s);
+}
+
+function fmtPct(p) {
+  if (p >= 0.995) return "100%";
+  if (p >= 0.095) return Math.round(p * 100) + "%";
+  if (p >= 0.001) return (p * 100).toFixed(1) + "%";
+  return "<0.1%";
+}
+
+// --- инференс --------------------------------------------------------------
+async function classify() {
+  if (!session || !currentImage) return;
+  runBtn.disabled = true;
+  const t0 = performance.now();
+  try {
+    const input = preprocess(currentImage);
+    const out = await session.run({ [session.inputNames[0]]: input });
+    const logits = Array.from(out[session.outputNames[0]].data);
+    render(softmax(logits), performance.now() - t0);
+  } catch (e) {
+    result.innerHTML = `<div class="empty"><div class="ico">⚠️</div><div>Ошибка: ${e.message}</div></div>`;
+    console.error(e);
+  }
+  runBtn.disabled = false;
+}
+
+function render(probs, ms) {
+  const pairs = CLASSES.map((c, i) => [c, probs[i]]).sort((a, b) => b[1] - a[1]);
+  const top = pairs.slice(0, 4);
+  const [cls, p] = top[0];
+  const [emoji, name, cat, hint] = CLASS_INFO[cls];
+
+  const rows = top.map(([c, v], i) => {
+    const [, ru] = CLASS_INFO[c];
+    // Минимум 1.5% ширины: иначе почти нулевая вероятность рисуется невидимой
+    // полоской и строка выглядит как сбой отрисовки.
+    return `<div class="row${i === 0 ? " top" : ""}">
+      <div class="nm">${ru}<span class="en">${c}</span></div>
+      <div class="track"><div class="fill" style="width:${Math.max(v * 100, 1.5).toFixed(1)}%"></div></div>
+      <div class="pct">${fmtPct(v)}</div>
+    </div>`;
+  }).join("");
+
+  // Порог 0.55: ниже него у модели обычно два конкурирующих кандидата,
+  // и выдавать один ответ как факт нечестно.
+  const warn = p < 0.55
+    ? `<div class="warn">Модель не уверена: близкий вариант — <b>${CLASS_INFO[top[1][0]][1]}</b>
+       (${fmtPct(top[1][1])}). Стоит сфотографировать предмет крупнее или при другом освещении.</div>`
+    : "";
+
+  result.innerHTML = `<div class="card">
+    <div class="verdict">
+      <div class="emoji">${emoji}</div>
+      <div class="who"><div class="cat">${cat}</div><div class="name">${name}</div></div>
+      <div class="score"><div class="num">${Math.round(p * 100)}<span>%</span></div>
+        <div class="cap">за ${ms.toFixed(0)} мс</div></div>
+    </div>
+    <div class="bars">${rows}</div>
+    ${warn}
+    <div class="hint"><div class="mark">i</div><div class="txt">${hint}</div></div>
+  </div>`;
+}
+
+// --- ввод изображения ------------------------------------------------------
+function setImage(src) {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => {
+    currentImage = img;
+    preview.src = src;
+    drop.classList.add("has-image");
+    runBtn.disabled = !session;
+    classify();
+  };
+  img.src = src;
+}
+
+function readFile(file) {
+  if (!file || !file.type.startsWith("image/")) return;
+  const r = new FileReader();
+  r.onload = (e) => setImage(e.target.result);
+  r.readAsDataURL(file);
+}
+
+drop.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", (e) => readFile(e.target.files[0]));
+["dragenter", "dragover"].forEach((ev) =>
+  drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach((ev) =>
+  drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", (e) => readFile(e.dataTransfer.files[0]));
+window.addEventListener("paste", (e) => {
+  const item = [...(e.clipboardData?.items || [])].find((i) => i.type.startsWith("image/"));
+  if (item) readFile(item.getAsFile());
+});
+
+runBtn.addEventListener("click", classify);
+clearBtn.addEventListener("click", () => {
+  currentImage = null;
+  drop.classList.remove("has-image");
+  preview.src = "";
+  runBtn.disabled = true;
+  result.innerHTML = `<div class="empty"><div class="ico">♻️</div>
+    <div>Загрузите фотографию или выберите пример ниже</div></div>`;
+});
+
+function buildExamples() {
+  const box = $("thumbs");
+  box.innerHTML = CLASSES.map(
+    (c) => `<button title="${CLASS_INFO[c][1]}" data-src="examples/${c}.jpg">
+              <img src="examples/${c}.jpg" alt="${CLASS_INFO[c][1]}" loading="lazy">
+            </button>`
+  ).join("");
+  box.querySelectorAll("button").forEach((b) =>
+    b.addEventListener("click", () => setImage(b.dataset.src)));
+}
+
+init();
+</script>
+</body>
+</html>

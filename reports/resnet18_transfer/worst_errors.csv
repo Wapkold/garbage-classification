@@ -1,0 +1,11 @@
+path,true,pred,p_pred,p_true,margin
+D:\Visual Studio\prod\image-classification\data\garbage_classification\original\shoes\shoes_679.jpg,shoes,clothes,0.999777615070343,0.00010170278255827725,0.9996759295463562
+D:\Visual Studio\prod\image-classification\data\garbage_classification\original\plastic\plastic_813.jpg,plastic,glass,0.9985575079917908,0.0005426823627203703,0.9980148077011108
+D:\Visual Studio\prod\image-classification\data\garbage_classification\original\cardboard\cardboard_1257.jpg,cardboard,biological,0.9839300513267517,0.003652173327282071,0.9802778959274292
+D:\Visual Studio\prod\image-classification\data\garbage_classification\original\cardboard\cardboard_580.jpg,cardboard,plastic,0.984991729259491,0.009885954670608044,0.9751057624816895
+D:\Visual Studio\prod\image-classification\data\garbage_classification\original\cardboard\cardboard_885.jpg,cardboard,paper,0.9741254448890686,0.0021903403103351593,0.9719350934028625
+D:\Visual Studio\prod\image-classification\data\garbage_classification\original\glass\glass_1552.jpg,glass,biological,0.974877655506134,0.009988046251237392,0.9648895859718323
+D:\Visual Studio\prod\image-classification\data\garbage_classification\original\paper\paper_171.jpg,paper,cardboard,0.9777970314025879,0.01888897269964218,0.9589080810546875
+D:\Visual Studio\prod\image-classification\data\garbage_classification\original\plastic\plastic_1041.jpg,plastic,trash,0.9735081791877747,0.022913699969649315,0.9505944848060608
+D:\Visual Studio\prod\image-classification\data\garbage_classification\original\biological\biological_582.jpg,biological,trash,0.9456459879875183,0.0006667631096206605,0.9449792504310608
+D:\Visual Studio\prod\image-classification\data\garbage_classification\original\metal\metal_367.jpg,metal,trash,0.9298928380012512,0.0028104253578931093,0.9270824193954468
