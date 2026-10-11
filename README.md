@@ -1,5 +1,7 @@
 # Классификация мусора по фотографии (PyTorch)
 
+[![tests](https://github.com/Wapkold/garbage-classification/actions/workflows/tests.yml/badge.svg)](https://github.com/Wapkold/garbage-classification/actions/workflows/tests.yml)
+
 **Живое демо: https://huggingface.co/spaces/gapkold/trash-classification** —
 работает целиком в браузере, без сервера.
 
@@ -143,7 +145,7 @@ BN в `eval`, когда backbone заморожен.
 
 ### Обучение
 
-AdamW (lr 1e-3, weight decay 1e-4), `ReduceLROnPlateau` **по val accuracy** — раз
+Все прогоны с `--seed 42` (по умолчанию): он фиксирует и разбиение на train/val/test, и инициализацию. AdamW (lr 1e-3, weight decay 1e-4), `ReduceLROnPlateau` **по val accuracy** — раз
 модель отбирается по этой метрике, по ней же логично резать LR. Веса классов
 обратны частоте (`--class-weights`).
 
@@ -303,7 +305,7 @@ python build_static_space.py   # собирает deploy_static/ (11.5 МБ)
 ## Структура проекта
 
 ```
-image-classification/
+garbage-classification/
 ├── data/
 │   └── garbage_classification/     # датасет (в git не попадает)
 ├── notebooks/
@@ -315,9 +317,10 @@ image-classification/
 │   └── evaluate.py                 # метрики, матрица ошибок, разбор ошибок
 ├── app/
 │   └── app.py                      # Gradio-демо
-├── checkpoints/<прогон>/best.pt    # веса
+├── checkpoints/<прогон>/best.pt    # веса (в git не входят, создаются обучением)
 ├── reports/<прогон>/               # метрики и графики
 ├── static/index.html               # исходник страницы для браузерного инференса
+├── tests/                          # pytest: архитектуры, сплит, препроцессинг демо
 ├── onnx/                           # экспортированная модель (генерируется)
 ├── deploy_static/                  # пакет статического Space (генерируется)
 ├── deploy/                         # пакет Gradio-Space (генерируется)
@@ -353,6 +356,14 @@ python -m src.train --epochs 60 --class-weights --run-name simple_cnn_60ep
 ```bash
 python -m src.evaluate --checkpoint checkpoints/resnet18_finetune/best.pt --split test
 ```
+
+Тесты (данные и GPU не нужны, ResNet18 создаётся без скачивания весов):
+
+```bash
+python -m pytest
+```
+
+Они проверяют число параметров из таблицы выше, стратификацию и воспроизводимость сплита, заморозку BatchNorm и то, что JS-препроцессинг и порядок классов в браузерном демо совпадают с Python.
 
 Полезные флаги: `--run-name` (имя прогона), `--arch` (выбор архитектуры),
 `--num-workers 0` (если на Windows падает spawn).
